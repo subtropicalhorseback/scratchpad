@@ -45,7 +45,7 @@ targDir(){
     read -p "Input the target directory: (follow cd format)  " targetDir
     echo ""
     echo -e "ok, $targetDir \n"
-    sleep 1
+    sleep 0.5 
 
     #logging 
     echo "$(date +%H:%M:%S) received target directory $targetDir from user" >> $permissionlog
@@ -171,7 +171,7 @@ turnedOn(){
         fi
         
         ## display running processes
-        ps aux 
+        ps aux
 
         ## input to select a identify a target
         read -p "Enter the number of the process you want to end: " ProN
@@ -218,36 +218,46 @@ cheddirray=()                                       ## declares ARRAY
 # Main
 
 read -p "What directory do you want? " dir          ## initial prompt to check for a directory
+sleep 0.5
 while true;                                         ## opens infinite while (LOOP)
 do
     echo "$dir - great. I'll look... you relax."    ## takes input
     echo " "
     cheddirray+=($dir)                              ## adds input to ARRAY
+    sleep 0.5
     if [ -d "$dir" ];                               ## checks for directory (CONDITIONAL)
     then
         echo "I found your, uh, whatever"           ## output if true
+        sleep 0.5
         echo " "
     else
         echo "I don't see it anywhere...Sigh... I'll make it for you. No - don't help or anything"  ## output if false
+        sleep 0.5
         echo " "
         mkdir -p $dir                                            ## makes the directory
 
         if [ $? -eq 0 ];                                        ## checks for directory
         then 
             echo "Alright, I made $dir successfully."           ## output if successful
+            sleep 0.5
             echo " "
         else
+            sleep 0.5
             echo "That didn't feel too good..."                 ## output if failed to create
         fi
     fi
     read -p "Do we have to Cheddir (Ch.Dir.) again? (y/n) " again               ## prompt to continue or break
     if [ "$again" = "y" ];                                                      ## CONDITIONAL for input to continue
     then
+        sleep 0.5
         echo "I mean, we've only checked '${cheddirray[@]}' so far, so surrreee - let's keep looking..." ## prints array contents
+        sleep 0.5
         echo " "
         read -p "What are we looking for this time? " dir                       ## takes new input
     else
+        sleep 0.5
         echo "Thank god that's all I had to do today..."                        ## prints array contents
+        sleep 0.5
         echo " "
         echo "~**~ Signing off ~**~"                                            ## breaks LOOP
         break
@@ -273,6 +283,7 @@ newlogname="Syslog_$(date +'%Y%m%d-%H%M%S')"
 
 #get target
 read -p "Input the target directory: (follow cd format)  " targetDir
+sleep 0.5
 echo ""
 echo -e "ok, $targetDir \n"
 sleep 1
@@ -282,21 +293,9 @@ sleep 1
 
 # Main
 
-echo "Copying file"
-echo "from" 
-echo $targetfile
-echo "to"
-echo $targetDir
-echo "as of $(date +'%H:%M')"
+echo "Copying $targetfile to $targetDir as of $(date +'%H:%M')"
 
-# filler
-echo "..."
-sleep 1
-echo "..."
-sleep 1
-echo "..."
-sleep 2
-##good things are worth waiting - this is a UI/UX choice^ because people feel like "it's doing something"
+sleep 0.5
 
 cp $targetfile "$targetDir/$newlogname.txt" && echo "Successfully copied"
 
@@ -456,8 +455,10 @@ CALUS
 # 5- calus
 
 takeprompts(){
+
+clear
+
 while true; do
-    clear
 
     echo -e "Would you like to run a shell script? Enter a number 1-5. "
     echo "Here are the options: "
@@ -470,52 +471,62 @@ while true; do
     read choice
 
     if [[ $choice == 1 ]]; then
-        figlet MOPE
+        figlet MOPE -f Modular.flf
         echo ""
         echo ""
         sleep 0.5
         mope 
-        # The -p option is used with the read command to display a prompt to the user and wait for them to enter input.
+        sleep 0.5
         read -p "Press Enter to continue"
 
     elif [[ $choice == 2 ]]; then
-        figlet sad
+        figlet sad -f Modular.flf
         echo ""
         echo ""
         sleep 0.5
         sad
+        sleep 0.5
         read -p "Press Enter to continue"
 
     elif [[ $choice == 3 ]]; then
-        figlet Cheddir
+        figlet Cheddir -f Modular.flf
         echo ""
         echo ""
         sleep 0.5
         cheddir
+        sleep 0.5
         read -p "Press Enter to continue"
 
     elif [[ $choice == 4 ]]; then
-        figlet LogCopy
+        figlet LogCopy -f Modular.flf
         echo ""
         echo ""
         sleep 0.5
         logcopy
+        sleep 0.5
         read -p "Press Enter to continue"
 
     elif [[ $choice == 4 ]]; then
-        figlet CALUS
+        figlet CALUS -f Modular.flf
         echo ""
         echo ""
         sleep 0.5
         calus
+        sleep 0.5
         read -p "Press Enter to continue"
 
     elif [[ $choice == "no" ]]; then
-        figlet "adios motha clucka"
+        sleep 0.5
+        figlet "adios motha clucka" -f Modular.flf
+        echo ""
+        echo "~~"
+        echo ""
         break
 
     else
-        figlet "wrong answer sucker"
+        sleep 0.5
+        figlet "wrong answer sucker" -f Modular.flf
+        sleep 0.5
         read -p "Press Enter to continue"
     fi
 done
