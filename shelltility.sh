@@ -455,8 +455,10 @@ CALUS
 # 4- logcopy
 # 5- calus
 
+takeprompts(){
 while true; do
     clear
+
     echo -e "Would you like to run a shell script? Enter a number 1-5. "
     echo "Here are the options: "
     echo "   1. MOdify PErmissions (MOPE) - uses chmod to change files in a target directory. "
@@ -464,28 +466,59 @@ while true; do
     echo "   3. CHEck DIRectory (CHEDDIR) - checks for the existence of a directory and makes it if it doesn't exist "
     echo "   4. Log Copy - copies the system log from /var/ to your target directory "
     echo "   5. Configure A Linux Ubuntu Server (CALUS) - sets up UFW 22, 139, 445 and sends prompts to make a user account and sambe account on the server."
+    echo "   'no' to quit"
     read choice
 
     if [[ $choice == 1 ]]; then
         figlet MOPE
         echo ""
         echo ""
+        sleep 0.5
         mope 
         # The -p option is used with the read command to display a prompt to the user and wait for them to enter input.
         read -p "Press Enter to continue"
-    #elif [[ $choice == 2 ]]; then
-    #    echo "Dogs are great"
-    #    read -p "Press Enter to continue"
-    #elif [[ $choice == 3 ]]; then
-    #    echo "Oh, you are not a cat or dog person!"
-    #    read -p "What is your pet of choice? " pet
-    #    echo "I like $pet too!"
-    #    read -p "Press Enter to continue"
-    #elif [[ $choice == 4 ]]; then
-    #    echo "See ya later!"
-    #    exit 0
+
+    elif [[ $choice == 2 ]]; then
+        figlet sad
+        echo ""
+        echo ""
+        sleep 0.5
+        sad
+        read -p "Press Enter to continue"
+
+    elif [[ $choice == 3 ]]; then
+        figlet Cheddir
+        echo ""
+        echo ""
+        sleep 0.5
+        cheddir
+        read -p "Press Enter to continue"
+
+    elif [[ $choice == 4 ]]; then
+        figlet LogCopy
+        echo ""
+        echo ""
+        sleep 0.5
+        logcopy
+        read -p "Press Enter to continue"
+
+    elif [[ $choice == 4 ]]; then
+        figlet CALUS
+        echo ""
+        echo ""
+        sleep 0.5
+        calus
+        read -p "Press Enter to continue"
+
+    elif [[ $choice == "no" ]]; then
+        figlet "adios motha clucka"
+        break
+
     else
         figlet "wrong answer sucker"
         read -p "Press Enter to continue"
     fi
 done
+}
+
+takeprompts | lolcat
