@@ -2,11 +2,21 @@
 
 #####
 #define options for menu
+# 0- download font
 # 1- mope
 # 2- sad
 # 3- cheddir
 # 4- logcopy
 # 5- calus
+# 6- helloworld
+
+fontgrab(){
+    sudo wget https://raw.githubusercontent.com/titusgroen/figlet-fonts/master/Modular.flf -O /usr/share/figlet/Modular.flf &
+    wget_pid=$!
+    wait $wget_pid
+    clear
+    echo "I downloaded a font for figlet to /usr/share/figlet/Modular.flf"
+}
 
 mope(){ 
 
@@ -444,15 +454,29 @@ CALUS
 
 }
 
+############################################################################################
+###################################### HelloWorld ##########################################
+############################################################################################
+
+hellothere(){
+
+str1="hello there\n"
+str2="General Kenobi!?\n"
+str3="I hate sand.\n"
+str4="Hello World\n"
+
+array1=("$str1" "$str2" "$str3" "$str4")
+
+for thing in "${array1[@]}"; do
+    sleep 1
+    echo -e "$thing"
+done 
+
+}
+
 
 ####################################################################################################################
 # begin menu
-
-# 1- mope
-# 2- sad
-# 3- cheddir
-# 4- logcopy
-# 5- calus
 
 takeprompts(){
 
@@ -467,7 +491,11 @@ while true; do
     echo "   3. CHEck DIRectory (CHEDDIR) - checks for the existence of a directory and makes it if it doesn't exist "
     echo "   4. Log Copy - copies the system log from /var/ to your target directory "
     echo "   5. Configure A Linux Ubuntu Server (CALUS) - sets up UFW 22, 139, 445 and sends prompts to make a user account and sambe account on the server."
-    echo "   'no' to quit"
+    echo "   6. Hello World - send a useless echo of Hello World to the screen."
+    echo "   7. Ping Loopback IP - sends an ICMP ping to this device's loopback address"
+    echo "   8. IP Info - prints ip info for this device to the screen."
+    echo ""
+    echo "or press 'no' to quit, you quitter"
     read choice
 
     if [[ $choice == 1 ]]; then
@@ -506,7 +534,7 @@ while true; do
         sleep 0.5
         read -p "Press Enter to continue"
 
-    elif [[ $choice == 4 ]]; then
+    elif [[ $choice == 5 ]]; then
         figlet CALUS -f Modular.flf
         echo ""
         echo ""
@@ -515,9 +543,38 @@ while true; do
         sleep 0.5
         read -p "Press Enter to continue"
 
+    elif [[ $choice == 6 ]]; then
+        figlet You  Chose  Hello World -f Modular.flf
+        echo ""
+        sleep 0.5
+        echo "running"
+        sleep 0.5
+        hellothere 
+        sleep 0.5
+        read -p "Press Enter to continue"
+
+    elif [[ $choice == 7 ]]; then
+        figlet You  Chose  Self-Ping -f Modular.flf
+        echo ""
+        echo ""
+        sleep 0.5
+        echo "Sending 8 pings"
+        ping -c 8 127.0.0.1
+        sleep 0.5
+        read -p "Press Enter to continue"
+
+    elif [[ $choice == 8 ]]; then
+        figlet You Chose IP Info -f Modular.flf
+        echo ""
+        echo ""
+        sleep 0.5
+        ip -o -4 addr show | awk '{print $1, $2, $4}'
+        sleep 0.5
+        read -p "Press Enter to continue"    
+
     elif [[ $choice == "no" ]]; then
         sleep 0.5
-        figlet "adios motha clucka" -f Modular.flf
+        echo -e "adios \nmotha \nclucka" | figlet -f Modular.flf
         echo ""
         echo "~~"
         echo ""
@@ -525,11 +582,14 @@ while true; do
 
     else
         sleep 0.5
-        figlet "wrong answer sucker" -f Modular.flf
+        echo -e "wrong \nanswer \nsucker" | figlet -f Modular.flf
+
         sleep 0.5
         read -p "Press Enter to continue"
     fi
 done
 }
 
+fontgrab &
+sleep 3
 takeprompts | lolcat
