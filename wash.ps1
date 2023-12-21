@@ -357,46 +357,105 @@ function Server-Maintenance {
 ##################################
 
 function Create-Network-Folders {
-#    # Prompt user for folder name
-#    $folderName = Read-Host "Enter the name of the shared folder"
 
-#    # Validate folder name
-#    if (-not $folderName -or $folderName -notmatch '^[a-zA-Z0-9_\-]+$') {
-#        Write-Host "Invalid folder name. Please use alphanumeric characters, underscores, or hyphens."
-#        return
-#    }
+    #read the domain
+    $Dname = ([System.DirectoryServices.ActiveDirectory.Domain]::GetComputerDomain().Name -split '\.')[0]
 
-#    # Check if folder already exists
-#    $folderPath = "C:\SharedFolders\$folderName"
-#    $sharePath = "\\$env:COMPUTERNAME\SharedFolders\$folderName"
-#    if (Test-Path $folderPath) {
-#        Write-Host "The folder '$folderName' already exists. Aborting."
-#        return
-#    }
+    # Prompt user for folder name - THIS WORKS
+    $folderName = Read-Host "Enter the name of the shared folder"
 
-#    # Create the folder
-#    New-Item -Path $folderPath -ItemType Directory -ErrorAction Stop
+    # Validate folder name - THIS WORKS
+    if (-not $folderName -or $folderName -notmatch '^[a-zA-Z0-9_\-]+$') {
+        Write-Host "Invalid folder name. Please use alphanumeric characters, underscores, or hyphens."
+        return
+    }
 
-#    # Share the folder and assign access based on OUs
-#    try {
-#        # Share the folder using net share
-#        net share $folderName=$sharePath /GRANT:Everyone,0 /GRANT:"Domain Admins",READ
+    # Check if folder already exists - THIS WORKS
+    $folderPath = "C:\SharedFolders\$folderName"
+    $sharePath = "C:\SharedFolders\$folderName"
+    if (Test-Path $folderPath) {
+        Write-Host "The folder '$folderName' already exists. Proceeding."
+    }
+    else {
+        # Create the folder - THIS WORKS
+        New-Item -Path $folderPath -ItemType Directory -ErrorAction Stop
+    }
 
-#        # Add access control based on OUs
-#        foreach ($ou in $allowedOUs) {
-#            $domainComponents = (Get-ADDomain).DistinguishedName -split ',' | ForEach-Object { $_ -replace 'DC=' }
-#            $ouPath = "OU=$ou,$domainComponents"
-#            net share $folderName /GRANT:$ouPath,CHANGE
-#        }   
-
-#        Write-Host "Shared folder '$folderName' created and shared successfully with access control for selected OUs."
-#    }  
-#    catch {
-#        Write-Host "Error sharing folder: $_"
-#    }
-#}
+    do {
+        # Print list of OUs - THIS WORKS
+        Write-Host "`n`nHere's a list of OUs in this AD:"
+        Get-ADOrganizationalUnit -Filter * | Select-Object Name | Format-List
+    
+        # Prompt for OU Selection: - THIS WORKS
+        $authorizedOU = Read-Host "Enter one OU name to authorize access to the shared folder (at $folderName)"
+    
+        # THIS WORKS
+        $existOU = Get-ADOrganizationalUnit -Filter {Name -eq $authorizedOU}
+        if ($existOU -eq $null) {
+            Write-Host "That OU doesn't exist. Option 4 in the Main Menu allows creation of OUs."
+            break
+        } else {
+            # show users in OU
+            Write-Host "`nYou will see a red Windows warning here if there are no AD-Users in your OU. No problem.`n"
+            Write-Host "Here is a list of users in your selected OU:"
+            Get-ADUser -SearchBase "OU=$authorizedOU,DC=$Dname,DC=com" -Filter * | Select-Object Name | Format-List
+        }
+    
+        # confirm selection - THIS WORKS
+        $confirmAuth = Read-Host "`nConfirm you want $authorizedOU users to have access to $folderName (y/n)`n"
+        if ($confirmAuth -eq 'y') {
+            $authSG = "SecGroup$authorizedOU"
+    
+            # check for existence of group
+            $existSG = Get-ADGroup -Filter {Name -eq $authSG}
+            if ($existSG -eq $null) {
+                # if it doesn't exist
+                New-ADGroup -Name "$authSG" -GroupScope Global -GroupCategory Security 
+            } else {
+                # if it does exist
+                Write-Host "`nGood news, this OU has a Security Group already! Mirroring current OU users to respective SG.`n"
+            }               
+    
+            #copy the users and report
+            Get-ADUser -SearchBase "OU=$authorizedOU,DC=$Dname,DC=com" -Filter * | ForEach-Object {Add-ADGroupMember -Identity "$authSG" -Members $_ }
+            Write-Host "`nAdded users from $authorizedOU to $authSG.`n"
+    
+            # Share the folder and assign access based on SGs
+            try {
+                $netshare = $folderName
+                net share $netshare=$sharePath /GRANT:$authSG,FULL
+                Write-Host "`nShared folder '$folderName' shared successfully with $authSG`n"
+            }   
+            catch {
+                Write-Host "`n`n ***** Error sharing folder: $_"
+                break
+            }
+    
+            $addAnother = Read-Host -Prompt "Would you like to allow another OU to access $folderName? (Y/N)"
+        }
+        elseif ($confirmAuth -eq 'n') {
+            $addAlt = Read-Host -Prompt "Would you like to allow a different OU to access $folderName? (Y/N)"
+            if ($addAlt -eq 'y') {
+                return
+            }
+            elseif ($addAlt -eq 'n') {
+                break
+            }
+            else {
+                Write-Host "Invalid input"
+                return
+            }
+        }
+        else {
+            Write-Host "Invalid input"
+            return
+        }
+    } while ($addAnother -eq 'Y')
+    
+}
 
 ##################################
+
 
 function ConfigureEmail {
 
@@ -435,7 +494,7 @@ while ($true) {
     Write-Host "4. Add AD Users or OUs to the Domain"
     Write-Host "5. Server Maintenance - Rename, Static IP, DNS"
     Write-Host "6. Create Shared Network Folders"
-    Write-Host "7. Configure Intranet Email Server"
+    # Write-Host "7. Configure Intranet Email Server"
     Write-Host "Q. Quit"
 
     # Get user input
@@ -449,7 +508,7 @@ while ($true) {
         '4' { Provision-ADUser; break }
         '5' { Server-Maintenance; break }
         '6' { Create-Network-Folders; break }
-        '7' { ConfigureEmail; break }
+    #    '7' { ConfigureEmail; break }
         'Q' { exit }
         default { Write-Host "Invalid choice. Please try again." }
     }
