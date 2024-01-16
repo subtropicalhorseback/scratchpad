@@ -61,17 +61,16 @@ adduserkey(){
 
 read -p "Do you have a public SSH key to provide for the new user, $username? y/n " isKey
 if [ "$isKey" = 'y' ]; then 
-    echo "Provide the public SSH key for $username: "
+    read -p "Provide the public SSH key for $username: " publickey
 
     # Create .ssh directory if it doesn't exist
     if [ ! -d "/home/$username/.ssh" ]; then
         sudo mkdir -p "/home/$username/.ssh"
-        sudo chown $username:$username "/home/$username/.ssh"
+        sudo chown $username:sftp_users "/home/$username/.ssh"
     fi
 
-
     # Read the key and append it to authorized_keys
-    sudo cat > "/home/$username/.ssh/authorized_keys"
+    sudo echo $publickey > "/home/$username/.ssh/authorized_keys"
 
     # Set appropriate permissions
     sudo chmod 700 "/home/$username/.ssh"
