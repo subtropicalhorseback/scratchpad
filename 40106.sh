@@ -69,13 +69,11 @@ if [ "$isKey" = 'y' ]; then
         sudo chown $username:sftp_users "/home/$username/.ssh"
     fi
 
-    # Read the key and append it to authorized_keys
-    sudo echo $publickey > "/home/$username/.ssh/authorized_keys"
-
-    # Set appropriate permissions
-    sudo chmod 700 "/home/$username/.ssh"
+    # Correctly write the key to authorized_keys with appropriate permissions
+    echo "$publickey" | sudo tee "/home/$username/.ssh/authorized_keys" > /dev/null
     sudo chmod 600 "/home/$username/.ssh/authorized_keys"
-    sudo chown -R $username:$username "/home/$username/.ssh"
+    sudo chown $username:sftp_users "/home/$username/.ssh/authorized_keys"
+    
 else
     echo "Skipping SSH key setup for $username."
 fi
