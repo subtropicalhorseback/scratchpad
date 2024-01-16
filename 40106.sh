@@ -70,10 +70,10 @@ if [ "$isKey" = 'y' ]; then
     fi
 
     # Correctly write the key to authorized_keys with appropriate permissions
-    echo "$publickey" | sudo tee "/home/$username/.ssh/authorized_keys" > /dev/null
+    echo "$publickey" | sudo tee "/home/$username/.ssh/authorized_keys" > /dev/null && echo -e "\nsuccessfully took public key!\n\n"
     sudo chmod 600 "/home/$username/.ssh/authorized_keys"
     sudo chown $username:sftp_users "/home/$username/.ssh/authorized_keys"
-    
+
 else
     echo "Skipping SSH key setup for $username."
 fi
