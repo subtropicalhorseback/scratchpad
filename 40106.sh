@@ -24,14 +24,14 @@ addusertogrp(){
     echo "setting password for $username"
     sudo passwd $username
 
-    echo "making /data/$username/upload"
+    echo -e "\nmaking /data/$username/upload\n"
     sudo mkdir -p /data/$username/upload
 
     echo "setting permissions for /data/$username and /data/$username/upload"
-    sudo chown -R root:root /data/$username
+    sudo chown -R $username:sftp_users /data/$username
     sudo chown -R $username:sftp_users /data/$username/upload
 
-    sudo chown -R $username:$username /home/$username
+    sudo chown -R $username:sftp_users /home/$username
     echo -e "Match Group sftp_users \nChrootDirectory /data/%u \nForceCommand internal-sftp" >> /etc/ssh/sshd_config
 
     echo "restarting ssh"
