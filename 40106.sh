@@ -9,7 +9,7 @@ getname(){
 makesftp(){
     read -p "Do you need to make the sftp usergroup? y/n " usergroup
     if [ "$usergroup" = "y" ]; then
-        groupadd sftp_users
+        sudo groupadd sftp_users
     elif [ "$usergroup" = "n" ]; then
         echo "ok! skipping"
     else
@@ -19,7 +19,7 @@ makesftp(){
 
 addusertogrp(){
     echo "adding $username to sftp_users"
-   useradd -g sftp_users -d /upload -s /sbin/nologin -m $username
+    sudo useradd -g sftp_users -d /upload -s /sbin/nologin -m $username
 
     echo "setting password for $username"
     passwd $username
@@ -40,5 +40,5 @@ addusertogrp(){
 
 
 getname
-new_acct
 makesftp
+addusertogrp
