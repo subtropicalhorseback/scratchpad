@@ -19,13 +19,13 @@ makesftp(){
 
 addusertogrp(){
     echo "adding $username to sftp_users"
-    sudo useradd -g sftp_users -d /upload -s /sbin/nologin -m $username
+    sudo useradd -g sftp_users -m $username
 
     echo "setting password for $username"
-    passwd $username
+    sudo passwd $username
 
     echo "making /data/$username/upload"
-    mkdir -p /data/$username/upload
+    sudo mkdir -p /data/$username/upload
 
     echo "setting permissions for /data/$username/upload and /home/$username/"
     chown -R root:sftp_users /data/$username
@@ -35,7 +35,7 @@ addusertogrp(){
     echo -e "Match Group sftp_users \nChrootDirectory /data/%u \nForceCommand internal-sftp" >> /etc/ssh/sshd_config
 
     echo "restarting ssh"
-    systemctl restart sshd
+    sudo systemctl restart sshd
 }
 
 
