@@ -7,15 +7,14 @@ getname(){
 }
 
 makesftp(){
-    read -p "Do you need to make the sftp usergroup? y/n " usergroup
-    if [ "$usergroup" = "y" ]; then
-        sudo groupadd sftp_users
-    elif [ "$usergroup" = "n" ]; then
-        echo "ok! skipping"
+    if getent group sftp_users > /dev/null; then
+        echo "Group 'sftp_users' already exists. Skipping creation."
     else
-        echo "invalid input"
+        echo "Creating group 'sftp_users'."
+        sudo groupadd sftp_users
     fi
 }
+
 
 addusertogrp(){
     echo "adding $username to sftp_users"
