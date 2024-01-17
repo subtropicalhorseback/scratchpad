@@ -36,9 +36,9 @@ addusertogrp(){
     # sudo chown -R $username:$username /home/$username
     sudo chown root:root /home/$username
     sudo chmod 755 /home/$username
-    sudo mkdir /home/$username/upload
-    sudo chown $username:$username /home/$username/upload
-    sudo chmod 700 /home/$username/upload
+    # sudo mkdir /home/$username/upload
+    # sudo chown $username:$username /home/$username/upload
+    # sudo chmod 700 /home/$username/upload
 
 # got help on this section from GPT - available on request
     # Backup the original sshd_config file
