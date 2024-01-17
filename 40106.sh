@@ -18,20 +18,22 @@ makesftp(){
 
 addusertogrp(){
     echo "adding $username to sftp_users"
-    sudo useradd -g sftp_users -g $username -m $username
+    sudo useradd -g sftp_users -m $username
+    sudo groupadd $username
+    sudo usermod -a -G $username $username
 
     echo "setting password for $username and setting default shell to BASH"
     sudo passwd $username
-    sudo chsh -s /bin/bash windowsuser
+    sudo chsh -s /bin/bash $username
 
     echo -e "\nmaking /data/$username/upload\n"
     sudo mkdir -p /data/$username/upload
 
-    echo "setting permissions for /data/$username and /data/$username/upload"
-    sudo chown -R $username:sftp_users /data/$username
-    sudo chown -R $username:sftp_users /data/$username/upload
+    #echo "setting permissions for /data/$username and /data/$username/upload"
+    #sudo chown -R $username:sftp_users /data/$username
+    #sudo chown -R $username:sftp_users /data/$username/upload
 
-    sudo chown -R $username:$username /home/$username
+    # sudo chown -R $username:$username /home/$username
     sudo chown root:root /home/$username
     sudo chmod 755 /home/$username
     sudo mkdir /home/$username/upload
