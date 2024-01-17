@@ -36,6 +36,7 @@ addusertogrp(){
     # sudo chown -R $username:$username /home/$username
     sudo chown root:root /home/$username
     sudo chmod 755 /home/$username
+    sudo chmod -R 775 /data/$username
     # sudo mkdir /home/$username/upload
     # sudo chown $username:$username /home/$username/upload
     # sudo chmod 700 /home/$username/upload
