@@ -138,6 +138,18 @@ function Provision-ADUser {
             $title = Get-Input -prompt "ENTER TITLE "
             $department = Get-Input -prompt "ENTER DEPARTMENT "
             $company = Get-Input -prompt "ENTER COMPANY "
+            $securePassword = Read-Host -AsSecureString -Prompt "ENTER PASSWORD "
+
+            # Convert the secure string password to plain text (BSTR)
+            $ptr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
+            try {
+                $password = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)
+            }
+            finally {
+                # Free the BSTR pointer
+                [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)
+            }
+
         
             # make the email address
             $emailLastName = $lastName.Substring(0, [Math]::Min(5, $lastName.Length))
@@ -163,8 +175,11 @@ function Provision-ADUser {
                 -Company $company `
                 -EmailAddress $email `
                 -Enabled $true `
-                -AccountPassword (ConvertTo-SecureString "Tikitech1" -AsPlainText -Force) `
-                -ChangePasswordAtLogon $true
+                -AccountPassword (ConvertTo-SecureString $password -AsPlainText -Force)
+#                -ChangePasswordAtLogon $true
+            
+            # clear password from memory
+            $password = $null
 
             Write-Host "A user account has been created in the Active Directory for $firstName $lastName with email address $email. Welcome to $company!"
             $addAnother = Get-Input -prompt "Would you like to add another user? (Y/N)"
