@@ -45,14 +45,14 @@ def buildPrompt(mode):
     # pull in country var
     global country
 
-    # here's the current path for mode-specific prompts
-    promptPath = f"/home/opslab/Documents/geminiprompts/mode{mode}prompt.txt"
+    # Correctly check if mode is '1' or '2'
+    if mode in ['1', '2']:
+        # here's the current path for mode-specific prompts
+        promptPath = f"/home/opslab/Documents/geminiprompts/mode{mode}prompt.txt"
 
-    if mode == ['1', '2']:
         # try to build a prompt
         try:
             with open(promptPath, 'r', encoding='utf-8') as file:
-
                 # use the country name in the prompt
                 prompt = file.read().replace("[Target Nation]", country)
 
@@ -113,74 +113,74 @@ def buildPrompt(mode):
             logging.error(f"Error in building prompt for mode 3: {e}")
             return None
     
-
-def query(model, prompt, mode):
+def interactive_analysis_with_history(model, initial_mode, initial_prompt):
+    """
+    Starts an interactive analysis session with history,
+    allowing for iterative refinements and feedback.
+    
+    :param model: The generative model instance.
+    :param initial_mode: The initial mode of analysis.
+    :param initial_prompt: The initial prompt for the session.
+    """
     try:
-        response = model.generate_content(prompt, stream=True) 
-        full_response = "\n".join(chunk.text for chunk in response)
-        logging.info("Gemini response: " + full_response)
+        # Start the chat session with no history
+        chat = model.start_chat(history=[])
+        # Send the initial prompt
+        response = chat.send_message(initial_prompt)
+        
+        # Log and save the initial response
+        log_and_save_response(initial_mode, response.text, "Initial")
+        
+        while True:
+            # User input for further instructions or to exit
+            additional_instructions = input("Enter further instructions, 'exit' to end, or 'save' to save current chat: ").strip()
+            
+            if additional_instructions.lower() == 'exit':
+                print("Exiting session.")
+                break
+            elif additional_instructions.lower() == 'save':
+                # Save the current chat history
+                save_chat_history(chat.history, initial_mode)
+                print("Chat history saved.")
+            else:
+                # Send additional instructions and log responses
+                response = chat.send_message(additional_instructions, stream=True)
+                for chunk in response:
+                    log_and_save_response(initial_mode, chunk.text, "Refinement")
 
-        # File Writing for mode output
-        outPath = f"/home/opslab/Documents/scratchpad/{country}_Mode{mode}.txt"
+    except Exception as e:
+        logging.error(f"Interactive analysis error: {e}")
+        print("An error occurred during the interactive analysis.")
 
-        with open(outPath, "w", encoding="utf-8") as outFile:
-            outFile.write(full_response) 
+def log_and_save_response(mode, response_text, stage):
+    """
+    Logs and saves the response text to a file.
+    
+    :param mode: The mode of analysis.
+    :param response_text: The text to log and save.
+    :param stage: The stage of interaction ('Initial' or 'Refinement').
+    """
+    logging.info(f"{stage} response for mode {mode}:\n{response_text}")
+    
+    # Define the output path based on stage and mode
+    outPath = f"/home/opslab/Documents/scratchpad/{country}_Mode{mode}_{stage}.txt"
+    with open(outPath, "w", encoding="utf-8") as outFile:
+        outFile.write(response_text)
+    
+    timeNow = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    print(f"{stage} response saved to file {outPath} as of {timeNow}.")
 
-        timeNow = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-        update5 = f"API response saved to file {outPath} as of {timeNow}."
-        print(update5, "\n")
-        logging.info(update5)
-
-        return full_response
-
-    # General error handling    
-    except Exception as e:  
-        logging.error(f"API error: {e}")
-        return "An error occurred during the API call."
-
-def start_mode_analysis(mode, prompt):
-    """Initializes a chat session for a given mode of analysis with a prompt."""
-    model = genai.GenerativeModel('gemini-pro')
-    chat = model.start_chat(history=[])  
-    response = chat.send_message(prompt)  
-    logging.info(f"Initial response for mode {mode}:\n{response.text}")
-    return chat
-
-def refine_analysis(chat, additional_instructions):
-    """Refines the analysis by sending additional instructions to the existing chat session."""
-    response = chat.send_message(additional_instructions, stream=True)
-    for chunk in response:
-        # print(chunk.text)
-        logging.info(f"Refinement chunk: {chunk.text}")
-
-def interactive_session():
-    """Runs an interactive analysis session that allows changing modes."""
-    global global_country_name
-    global_country_name = input("Enter the target country name: ")
-
-    while True:
-        mode = input("Enter analysis mode (1, 2, or 3), 'change country' to switch countries, or 'exit' to quit: ")
-        if mode.lower() == 'exit':
-            break
-        elif mode.lower() == 'change country':
-            global_country_name = input("Enter the target country name: ")
-            continue
-
-        log_content_for_country = read_log_for_country("/home/opslab/Documents/geminiprompts/geopolitical_analysis.log", global_country_name)
-        prompt = get_prompt_from_file(mode) + "\n\n" + log_content_for_country
-        if prompt:
-            chat_session = start_mode_analysis(mode, prompt)
-            while True:
-                further_instructions = input("Enter further instructions, 'change mode' to switch modes, or 'exit' to end: ")
-                if further_instructions.lower() == 'exit':
-                    return  # Exits the while loop and ends the session
-                elif further_instructions.lower() == 'change mode':
-                    logging.info("Changing analysis mode.")
-                    break  # Breaks the inner while loop and goes back to mode selection
-                refine_analysis(chat_session, further_instructions)
-        else:
-            print("Failed to load the prompt. Exiting.")
-            break
+def save_chat_history(history, mode):
+    """
+    Saves the entire chat history to a file for review.
+    
+    :param history: The chat history to save.
+    :param mode: The analysis mode for naming the file.
+    """
+    historyPath = f"/home/opslab/Documents/scratchpad/{country}_Mode{mode}_ChatHistory.txt"
+    with open(historyPath, "w", encoding="utf-8") as historyFile:
+        for entry in history:
+            historyFile.write(f"{entry['sender']}: {entry['text']}\n")
 
 def main():
     logFile = "/home/opslab/Documents/geminiprompts/analysis.log"
@@ -189,55 +189,44 @@ def main():
     # API key func
     getKey()
 
-    # declare country var for prompting
+    # Declare country var for prompting
     global country
 
-    # no error handling because plain text send to api
-    country = input("Enter the target country name: ")
+    # Retrieve the API key and configure the model
+    getKey()
+    
+    # Initialize session
+    print("Enter the target country name: ")
+    country = input().strip()
 
-    # keep loop to do the thing
     while True:
-        mode = input("Enter analysis mode (1, 2, or 3), 'country' to switch countries, or 'exit' to quit: ")
-        # exit
-        if mode.lower() == 'exit':
+        print("Enter analysis mode (1, 2, or 3), 'country' to switch countries, or 'exit' to quit: ")
+        mode = input().strip().lower()
+        
+        # Exit condition
+        if mode == 'exit':
             print("Exiting session.")
             break
-
-        # initial redefine country var
-        elif mode.lower() == 'country':
-            country = input("Enter the target country name: ")
+        
+        # Option to redefine country
+        elif mode == 'country':
+            print("Enter the target country name: ")
+            country = input().strip()
             continue
 
-        # mode selection
+        # Handling valid modes
         elif mode in ['1', '2', '3']:
-
-            # build country prompt from generic text file
-            prompt = buildPrompt(mode) 
-            
-            # print("Analyzing with the following prompt:\n", prompt)
-
-            # log the prompt - Mode, prompt, country
-            logging.info(f"Sending the following prompt for Mode {mode} analysis targeting {country}: \n\n{prompt}\n\n ********** \n********** \n")
-
-            # make the actual API call w the prompt
-            response_text = query(model, prompt, mode)
-            print(f"Gemini Response:\n\n ******************************************* \n{response_text}")
-            
-
-            command = input("Type 'change mode' to switch modes, 'change country' to change the target country, or 'exit' to end: ")
-            if command.lower() == 'change mode':
-                continue  # Allows selecting a new mode without re-prompting for the country
-            elif command.lower() == 'change country':
-                country = input("Enter the target country name: ")
-                continue  # Allows changing the country and continuing analysis
-            elif command.lower() == 'exit':
-                print("Exiting session.")
-                break
+            # Build the initial prompt based on the mode
+            prompt = buildPrompt(mode)
+            if prompt:
+                # Log the prompt
+                logging.info(f"Initiating analysis for Mode {mode} targeting {country} with the following prompt:\n{prompt}")
+                # Start the interactive session
+                interactive_analysis_with_history(model, mode, prompt)
+            else:
+                print("Failed to build prompt. Please check the input and try again.")
         else:
             print("Invalid mode selected. Please try again.")
 
-
 if __name__ == "__main__":
     main()
-
-
