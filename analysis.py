@@ -42,22 +42,21 @@ def read_log_for_country(log_file_path, country_name):
 
 def call_genai_api(prompt):
     """Makes an API call to Gemini and handles the response."""
-    model = genai.GenerativeModel('gemini-1.5-pro-latest')
+    model = genai.GenerativeModel('gemini-pro')
     try:
-        # Adjusting max_tokens, temperature, and top_k for balance of depth and length
-        response = model.generate_content(prompt, max_tokens=5000, temperature=0.8, top_k=30, stream=True)
+        response = model.generate_content(prompt, stream=True) 
         full_response = "\n".join(chunk.text for chunk in response)
         logging.info("Full API response: " + full_response)
         return full_response
-    except genai.Error as e:
+    except Exception as e:  # General error handling
         logging.error(f"API error: {e}")
         return "An error occurred during the API call."
 
-def start_mode_analysis(mode, initial_prompt):
-    """Initializes a chat session for a given mode of analysis with an initial prompt."""
+def start_mode_analysis(mode, prompt):
+    """Initializes a chat session for a given mode of analysis with a prompt."""
     model = genai.GenerativeModel('gemini-pro')
-    chat = model.start_chat(history=[])  # Start a fresh chat session for each mode
-    response = chat.send_message(initial_prompt)
+    chat = model.start_chat(history=[])  
+    response = chat.send_message(prompt)  
     logging.info(f"Initial response for mode {mode}:\n{response.text}")
     return chat
 
@@ -114,10 +113,10 @@ def main():
 
         if mode in ['1', '2', '3']:
             prompt = get_prompt_from_file(mode) 
-            prompt += "\n\n" + "Expected Output: Simulate the perspective of a technical Cyber Intelligence Analyst. Author a detailed analysis with depth and length, incorporating insights from previous interactions and log entries. Aim for 750-1000 word output per Mode as a starting point or minimum. Write at a collegiate level for a technical audience. Reference key events, individuals, political parties, religious groups, etc. Track important trends and narratives over time with an in-line 'theme' tag: for example '[external conflict: technological competition]'. Use these themes to identify narratives driving policy and decision making."
-            if mode == '3':
+            
+            #if mode == '3':
                 # For Mode 3, append log content to provide context
-                prompt += "\n\n" + "Additional Context from Previous Modes:\n" + read_log_for_country("/home/opslab/Documents/geminiprompts/geopolitical_analysis.log", global_country_name)
+            #    prompt += "\n\n" + "Additional Context from Previous Modes:\n" + read_log_for_country("/home/opslab/Documents/geminiprompts/geopolitical_analysis.log", global_country_name)
 
             print("Analyzing with the following prompt:\n", prompt)
             logging.info(f"Sending the following prompt for Mode {mode} analysis targeting {global_country_name}: {prompt}")
