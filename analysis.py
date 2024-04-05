@@ -106,50 +106,53 @@ def interactive_session():
             break
 
 def main():
-    """
-    Main execution function. Configures the API and starts an interactive session.
-    """
-    global global_country_name  # Use the global variable for country name
+    global global_country_name
 
     configure_api()
 
-    global_country_name = input("Enter the target country name: ")
+    # Initially set or update the country name
+    if not global_country_name:
+        global_country_name = input("Enter the target country name: ")
     log_file_path = "/home/opslab/Documents/geminiprompts/geopolitical_analysis.log"
     
     while True:
         mode = input("Enter analysis mode (1, 2, or 3), 'change country' to switch countries, or 'exit' to quit: ")
         if mode.lower() == 'exit':
+            print("Exiting session.")
             break
         elif mode.lower() == 'change country':
             global_country_name = input("Enter the target country name: ")
-            continue
+            continue  # Allows setting a new country without exiting
 
         if mode in ['1', '2', '3']:
-            # Read the log file for the country and add it to the prompt for Mode 3
-            log_content = ""
-            if mode == '3':
-                log_content = read_log_for_country(log_file_path, global_country_name)
-            prompt = get_prompt_from_file(mode) + "\n\nAdditional Context:\n" + log_content
-            
+            prompt = get_prompt_from_file(mode)
+            if mode == '3':  # For Mode 3, append log content to provide context
+                prompt += "\n\n" + "Previous output from Mode 1 and Mode 2:\n" + read_log_for_country(log_file_path, global_country_name)
+            prompt += "\n\n" + "Expected Output: Simulate the perspective of a technical Cyber Intelligence Analyst. Author a detailed analysis with depth and length, incorporating insights from previous interactions and log entries. Aim for 750-1000 word output per Mode as a starting point or minimum. Write at a collegiate level for a technical audience. Reference key events, individuals, political parties, religious groups, etc. Track important trends and narratives over time with an in-line 'theme' tag: for example '[external conflict: technological competition]'. Use these themes to identify narratives driving policy and decision making."
+
             if prompt:
-                chat_session = start_mode_analysis(mode, prompt)
-                while True:
-                    further_instructions = input("Enter further instructions, 'change mode' to switch modes, 'change country' to change the target country, or 'exit' to end: ")
-                    if further_instructions.lower() == 'exit':
-                        return  # Exits the function and ends the session
-                    elif further_instructions.lower() == 'change mode':
-                        logging.info("Changing analysis mode.")
-                        break  # Breaks the inner while loop and goes back to mode selection
-                    elif further_instructions.lower() == 'change country':
-                        global_country_name = input("Enter the target country name: ")
-                        break  # Allows changing the country and then continuing analysis
-                    refine_analysis(chat_session, further_instructions)
+                print("Analyzing with the following prompt:\n", prompt)
+                # Placeholder for API call: replace with your actual function call
+                # response = call_api(prompt) or similar
+                logging.info(f"Mode {mode} analysis started for {global_country_name} with prompt adjustments.")
+                
+                # Implement 'change mode' or 'exit' commands within the API interaction loop
+                command = input("Type 'change mode' to switch modes, 'change country' to change the target country, or 'exit' to end: ")
+                if command.lower() == 'change mode':
+                    continue  # Goes back to mode selection
+                elif command.lower() == 'change country':
+                    global_country_name = input("Enter the target country name: ")
+                    continue  # Allows changing the country and continuing analysis
+                elif command.lower() == 'exit':
+                    print("Exiting session.")
+                    break
             else:
                 print("Failed to load the prompt. Exiting.")
                 break
         else:
-            print("Invalid mode selected. Please enter 1, 2, or 3, 'change country' to switch countries, or 'exit' to quit.")
+            print("Invalid input. Please try again.")
 
 if __name__ == "__main__":
     main()
+
 
