@@ -6,7 +6,7 @@ import google.generativeai as genai
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S',
-                    handlers=[logging.FileHandler("/home/opslab/Documents/geminiprompts/geopolitical_analysis.log"), logging.StreamHandler()])
+                    handlers=[logging.FileHandler("geopolitical_analysis.log"), logging.StreamHandler()])
 
 def configure_api():
     """
@@ -18,14 +18,16 @@ def configure_api():
         raise ValueError("Please set the 'GOOGLE_API_KEY' environment variable.")
     genai.configure(api_key=api_key)
 
-def get_prompt_from_file(mode):
+def get_prompt_from_file(mode, country_name):
     """
-    Reads the prompt from a file corresponding to the chosen mode.
+    Reads the prompt from a file corresponding to the chosen mode and replaces placeholder with country name.
     """
-    prompt_path = f"/home/opslab/Documents/geminiprompts/mode{mode}prompt.txt"
+    prompt_path = f"mode{mode}_prompt.txt"
     try:
         with open(prompt_path, 'r', encoding='utf-8') as file:
-            return file.read()
+            prompt = file.read().replace("[Target Nation]", country_name)
+            logging.info(f"Loaded prompt for mode {mode} targeting {country_name}.")
+            return prompt
     except FileNotFoundError:
         logging.error(f"Prompt file for mode {mode} not found.")
         return None
@@ -47,29 +49,42 @@ def refine_analysis(chat, additional_instructions):
     response = chat.send_message(additional_instructions, stream=True)
     for chunk in response:
         print(chunk.text)
+        logging.info(f"Refinement chunk: {chunk.text}")
     
-    # Assuming 'model' is globally accessible for token counting; if not, it needs to be passed as an argument.
     token_count = chat.model.count_tokens(chat.history)
     logging.info(f"Total tokens used in chat session: {token_count}")
 
+def interactive_session():
+    """
+    Runs an interactive analysis session that allows changing modes and countries.
+    """
+    while True:
+        country_name = input("Enter the target country name: ")
+        mode = input("Enter analysis mode (1, 2, or 3), or 'exit' to quit: ")
+        if mode.lower() == 'exit':
+            break
+
+        prompt = get_prompt_from_file(mode, country_name)
+        if prompt:
+            chat_session = start_mode_analysis(mode, prompt)
+            while True:
+                further_instructions = input("Enter further instructions, 'change mode' to switch modes, or 'exit' to end: ")
+                if further_instructions.lower() == 'exit':
+                    break
+                elif further_instructions.lower() == 'change mode':
+                    logging.info("Changing analysis mode.")
+                    break
+                refine_analysis(chat_session, further_instructions)
+        else:
+            print("Failed to load the prompt. Exiting.")
+            break
+
 def main():
     """
-    Main execution function. Orchestrates the flow of operations.
+    Main execution function. Configures the API and starts an interactive session.
     """
     configure_api()
-
-    mode = input("Enter analysis mode (1, 2, or 3): ")
-    prompt = get_prompt_from_file(mode)
-    if prompt:
-        chat_session = start_mode_analysis(mode, prompt)
-        
-        while True:
-            further_instructions = input("Enter further instructions or 'exit' to end: ")
-            if further_instructions.lower() == 'exit':
-                break
-            refine_analysis(chat_session, further_instructions)
-    else:
-        print("Failed to load the prompt. Exiting.")
+    interactive_session()
 
 if __name__ == "__main__":
     main()
