@@ -64,7 +64,7 @@ def refine_analysis(chat, additional_instructions):
     """Refines the analysis by sending additional instructions to the existing chat session."""
     response = chat.send_message(additional_instructions, stream=True)
     for chunk in response:
-        print(chunk.text)
+        # print(chunk.text)
         logging.info(f"Refinement chunk: {chunk.text}")
 
 def interactive_session():
@@ -100,7 +100,7 @@ def main():
     global global_country_name
 
     configure_api()
-    global_country_name = input("Enter the target country name: ")  # Get initial country
+    global_country_name = input("Enter the target country name: ")
 
     while True:
         mode = input("Enter analysis mode (1, 2, or 3), 'change country' to switch countries, or 'exit' to quit: ")
@@ -118,11 +118,11 @@ def main():
                 # For Mode 3, append log content to provide context
             #    prompt += "\n\n" + "Additional Context from Previous Modes:\n" + read_log_for_country("/home/opslab/Documents/geminiprompts/geopolitical_analysis.log", global_country_name)
 
-            print("Analyzing with the following prompt:\n", prompt)
+            # print("Analyzing with the following prompt:\n", prompt)
             logging.info(f"Sending the following prompt for Mode {mode} analysis targeting {global_country_name}: {prompt}")
 
             response_text = call_genai_api(prompt)  # Make the actual API call
-            print(f"Full API Response:\n{response_text}")  # Print the complete response after streaming
+            print(f"Full API Response:\n\n ******************************************* \n{response_text}")
 
             command = input("Type 'change mode' to switch modes, 'change country' to change the target country, or 'exit' to end: ")
             if command.lower() == 'change mode':
