@@ -6,7 +6,9 @@ import google.generativeai as genai
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S',
-                    handlers=[logging.FileHandler("geopolitical_analysis.log"), logging.StreamHandler()])
+                    handlers=[logging.FileHandler("/home/opslab/Documents/geminiprompts/geopolitical_analysis.log"), logging.StreamHandler()])
+
+global country_name  # Global variable to store the country name across different modes
 
 def configure_api():
     """
@@ -18,11 +20,27 @@ def configure_api():
         raise ValueError("Please set the 'GOOGLE_API_KEY' environment variable.")
     genai.configure(api_key=api_key)
 
+def read_log_for_country(country_name):
+    """
+    Reads the prompt from a file corresponding to the chosen mode and replaces placeholder with country name.
+    """
+    log_file_path = "/home/opslab/Documents/geminiprompts/geopolitical_analysis.log"
+    log_entries = []
+    try:
+        with open(log_file_path, 'r', encoding='utf-8') as file:
+            for line in file:
+                if country_name in line:
+                    log_entries.append(line)
+    except FileNotFoundError:
+        logging.error(f"Log file not found.")
+        return None
+    return "\n".join(log_entries)
+
 def get_prompt_from_file(mode, country_name):
     """
     Reads the prompt from a file corresponding to the chosen mode and replaces placeholder with country name.
     """
-    prompt_path = f"mode{mode}_prompt.txt"
+    prompt_path = f"/home/opslab/Documents/geminiprompts/mode{mode}prompt.txt"
     try:
         with open(prompt_path, 'r', encoding='utf-8') as file:
             prompt = file.read().replace("[Target Nation]", country_name)
@@ -32,10 +50,14 @@ def get_prompt_from_file(mode, country_name):
         logging.error(f"Prompt file for mode {mode} not found.")
         return None
 
-def start_mode_analysis(mode, initial_prompt):
+def start_mode_analysis(mode, initial_prompt, country_name):
     """
     Initializes a chat session for a given mode of analysis with an initial prompt.
+    Includes log content if mode is 3.
     """
+    if mode == "3":
+        log_content = read_log_for_country(country_name)
+        initial_prompt = f"{log_content}\n\n{initial_prompt}"
     model = genai.GenerativeModel('gemini-pro')
     chat = model.start_chat(history=[])
     response = chat.send_message(initial_prompt)
@@ -56,23 +78,27 @@ def refine_analysis(chat, additional_instructions):
 
 def interactive_session():
     """
-    Runs an interactive analysis session that allows changing modes and countries.
+    Runs an interactive analysis session that allows changing modes without exiting.
     """
+    global country_name  # Use the global country_name variable
+    country_name = input("Enter the target country name: ")
     while True:
-        country_name = input("Enter the target country name: ")
-        mode = input("Enter analysis mode (1, 2, or 3), or 'exit' to quit: ")
+        mode = input("Enter analysis mode (1, 2, or 3), 'change country' to switch countries, or 'exit' to quit: ")
         if mode.lower() == 'exit':
             break
+        if mode.lower() == 'change country':
+            country_name = input("Enter the target country name: ")
+            continue
 
         prompt = get_prompt_from_file(mode, country_name)
         if prompt:
-            chat_session = start_mode_analysis(mode, prompt)
+            chat_session = start_mode_analysis(mode, prompt, country_name)
             while True:
-                further_instructions = input("Enter further instructions, 'change mode' to switch modes, or 'exit' to end: ")
+                further_instructions = input("Enter further instructions, 'change mode' to switch modes, 'change country' to switch countries, or 'exit' to end: ")
                 if further_instructions.lower() == 'exit':
                     break
-                elif further_instructions.lower() == 'change mode':
-                    logging.info("Changing analysis mode.")
+                elif further_instructions.lower() in ['change mode', 'change country']:
+                    logging.info("Changing analysis mode or country.")
                     break
                 refine_analysis(chat_session, further_instructions)
         else:
@@ -86,5 +112,4 @@ def main():
     configure_api()
     interactive_session()
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main
