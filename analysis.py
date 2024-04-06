@@ -79,8 +79,8 @@ def buildPrompt(mode):
             additional_context = "\n\nAdditional Context from Previous Modes:\n"
         
             # Construct file paths for mode 1 and mode 2
-            mode1_path = f"/home/opslab/Documents/scratchpad/{country}_Mode1.txt"
-            mode2_path = f"/home/opslab/Documents/scratchpad/{country}_Mode2.txt"
+            mode1_path = f"/home/opslab/Documents/geminiprompts/output/{country}_Mode1.txt"
+            mode2_path = f"/home/opslab/Documents/geminiprompts/output/{country}_Mode2.txt"
         
             # Try reading mode 1 file
             try:
@@ -145,7 +145,13 @@ def interactive_analysis_with_history(model, initial_mode, initial_prompt):
             else:
                 # Send additional instructions and log responses
                 response = chat.send_message(additional_instructions, stream=True)
+                print("Refinement response before loop:", response)  # Add this line
+                print(type(response))
+
                 for chunk in response:
+                    print("Refinement chunk:", chunk)  # Add this line
+                    print(type(chunk))
+                
                     log_and_save_response(initial_mode, chunk.text, "Refinement")
 
     except Exception as e:
@@ -160,34 +166,37 @@ def log_and_save_response(mode, response_text, stage):
     :param response_text: The text to log and save.
     :param stage: The stage of interaction ('Initial' or 'Refinement').
     """
+    if isinstance(response_text, genai.types.generation_types.GenerateContentResponse):
+        # Extract text from the first candidate
+        response_text = response_text.result.candidates[0].content.parts[0].text
+
     logging.info(f"{stage} response for mode {mode}:\n{response_text}")
-    
+
     # Define the output path based on stage and mode
-    outPath = f"/home/opslab/Documents/scratchpad/{country}_Mode{mode}_{stage}.txt"
+    outPath = f"/home/opslab/Documents/geminiprompts/output/{country}_Mode{mode}_{stage}.txt"
     with open(outPath, "w", encoding="utf-8") as outFile:
         outFile.write(response_text)
-    
+
     timeNow = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
     print(f"{stage} response saved to file {outPath} as of {timeNow}.")
 
 def save_chat_history(history, mode):
     """
     Saves the entire chat history to a file for review.
-    
+
     :param history: The chat history to save.
     :param mode: The analysis mode for naming the file.
     """
-    historyPath = f"/home/opslab/Documents/scratchpad/{country}_Mode{mode}_ChatHistory.txt"
+    historyPath = f"/home/opslab/Documents/geminiprompts/output/{country}_Mode{mode}_ChatHistory.txt"
     with open(historyPath, "w", encoding="utf-8") as historyFile:
-        for entry in history:
-            historyFile.write(f"{entry['sender']}: {entry['text']}\n")
+        for entry in history: 
+            if 'parts' in entry:
+                historyFile.write(f"{entry['role'].title()}: {entry['parts'][0]['text']}\n") 
+            else:
+                historyFile.write(f"{entry['role'].title()}: {entry['text']}\n")
 
 def main():
-    logFile = "/home/opslab/Documents/geminiprompts/analysis.log"
     model = genai.GenerativeModel('gemini-pro')
-    
-    # API key func
-    getKey()
 
     # Declare country var for prompting
     global country
