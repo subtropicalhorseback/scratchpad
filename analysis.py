@@ -123,14 +123,14 @@ def interactive_analysis_with_history(model, initial_mode, initial_prompt):
     :param initial_prompt: The initial prompt for the session.
     """
     try:
-        # Start the chat session with no history
-        chat = model.start_chat(history=[])
+        # Start the chat session 
+        chat = model.start_chat() 
+        history = []  # Initialize an empty history list 
+
         # Send the initial prompt
         response = chat.send_message(initial_prompt)
-        
-        # Log and save the initial response
         log_and_save_response(initial_mode, response.text, "Initial")
-        
+
         while True:
             # User input for further instructions or to exit
             additional_instructions = input("Enter further instructions, 'exit' to end, or 'save' to save current chat: ").strip()
@@ -138,19 +138,19 @@ def interactive_analysis_with_history(model, initial_mode, initial_prompt):
             if additional_instructions.lower() == 'exit':
                 print("Exiting session.")
                 break
+
             elif additional_instructions.lower() == 'save':
                 # Save the current chat history
-                save_chat_history(chat.history, initial_mode)
+                save_chat_history(history, initial_mode)
                 print("Chat history saved.")
+
             else:
                 # Send additional instructions and log responses
                 response = chat.send_message(additional_instructions, stream=True)
-                print("Refinement response before loop:", response)  # Add this line
-                print(type(response))
 
                 for chunk in response:
-                    print("Refinement chunk:", chunk)  # Add this line
-                    print(type(chunk))
+                    history.append({'role': 'User', 'parts': [{'text': additional_instructions}]})
+                    history.append({'role': 'Model', 'parts': [{'text': chunk.text}]}) 
                 
                     log_and_save_response(initial_mode, chunk.text, "Refinement")
 
